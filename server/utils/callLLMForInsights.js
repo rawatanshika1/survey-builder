@@ -1,16 +1,17 @@
 /**
- * Calls the Anthropic API to summarize a batch of open-text survey answers
- * into themes, sentiment breakdown, and a few representative quotes.
+ * Calls the Google Gemini API to summarize a batch of open-text survey
+ * answers into themes, sentiment breakdown, and a few representative
+ * quotes. Uses Gemini's free tier instead of a paid API.
  *
  * Returns null (instead of throwing) if the API key is missing or the
  * request fails, so the analytics route can degrade gracefully instead
  * of crashing the whole dashboard.
  */
 async function callLLMForInsights(texts) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.GEMINI_API_KEY;
 
   if (!apiKey) {
-    console.warn("ANTHROPIC_API_KEY not set - skipping AI insights");
+    console.warn("GEMINI_API_KEY not set - skipping AI insights");
     return null;
   }
 
@@ -32,30 +33,29 @@ Respond with ONLY valid JSON (no markdown fences, no preamble) in this exact sha
 The sentiment values should be percentages that add up to 100. Keep themes short (2-4 words each). Keep quotes under 20 words each, drawn from the actual answers.`;
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01"
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-4-6",
-        max_tokens: 500,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 500 }
+        })
+      }
+    );
 
     if (!response.ok) {
-      console.error("Anthropic API error:", response.status, await response.text());
+      console.error("Gemini API error:", response.status, await response.text());
       return null;
     }
 
     const data = await response.json();
-    const textBlock = data.content.find((block) => block.type === "text");
-    if (!textBlock) return null;
+    const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    const cleaned = textBlock.text.replace(/```json|```/g, "").trim();
+    if (!textOutput) return null;
+
+    const cleaned = textOutput.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
 
     return parsed;
