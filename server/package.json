@@ -1,0 +1,30 @@
+{
+  "name": "survey-builder-server",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "mongo:up": "docker-compose -f docker-compose.yml up -d",
+    "mongo:down": "docker-compose -f docker-compose.yml down",
+    "dev:with-mongo": "npm run mongo:up && npm run dev"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "json2csv": "^6.0.0-alpha.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+  ,
+  "optionalDependencies": {
+    "mongodb-memory-server": "^8.11.1"
+  }
+}

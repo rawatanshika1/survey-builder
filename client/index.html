@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Survey Builder</title>
+    <script>
+      // Apply saved dark mode preference immediately, before React mounts,
+      // to avoid a flash of the wrong theme on page load.
+      (function () {
+        var stored = localStorage.getItem("darkMode");
+        var prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        var dark = stored !== null ? stored === "true" : prefersDark;
+        if (dark) document.documentElement.classList.add("dark");
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
