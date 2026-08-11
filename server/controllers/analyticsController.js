@@ -144,7 +144,7 @@ async function refreshInsights(req, res) {
 
     if (!insights) {
       return res.status(503).json({
-        message: "AI insights are unavailable right now (check ANTHROPIC_API_KEY on the server)"
+        message: "AI insights are unavailable right now (check GEMINI_API_KEY on the server)"
       });
     }
 

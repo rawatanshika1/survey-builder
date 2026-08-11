@@ -23,24 +23,26 @@ async function callLLMForInsights(texts) {
 
 ${texts.map((t, i) => `${i + 1}. ${t}`).join("\n")}
 
-Respond with ONLY valid JSON (no markdown fences, no preamble) in this exact shape:
+Respond with ONLY valid JSON (no markdown fences, no preamble, no explanation) in this exact shape:
 {
   "themes": ["theme 1", "theme 2", "theme 3"],
   "sentiment": { "positive": 0, "neutral": 0, "negative": 0 },
   "quotes": ["short representative quote 1", "short representative quote 2"]
 }
 
-The sentiment values should be percentages that add up to 100. Keep themes short (2-4 words each). Keep quotes under 20 words each, drawn from the actual answers.`;
+The sentiment values should be percentages that add up to 100. Keep themes short (2-4 words each). Keep quotes under 20 words each, drawn from the actual answers. Output raw JSON only, nothing else.`;
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 500 }
+          generationConfig: {
+            maxOutputTokens: 1024
+          }
         })
       }
     );
@@ -51,13 +53,34 @@ The sentiment values should be percentages that add up to 100. Keep themes short
     }
 
     const data = await response.json();
-    const textOutput = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!textOutput) return null;
+    const candidate = data.candidates?.[0];
+    const textOutput = candidate?.content?.parts?.[0]?.text;
 
-    const cleaned = textOutput.replace(/```json|```/g, "").trim();
+    if (!textOutput) {
+      console.error(
+        "Gemini returned no text output. finishReason:",
+        candidate?.finishReason,
+        "raw response:",
+        JSON.stringify(data).slice(0, 500)
+      );
+      return null;
+    }
+
+    // Gemini sometimes wraps JSON in ```json fences or adds stray text
+    // before/after it - extract just the {...} block to be safe.
+    let cleaned = textOutput.replace(/```json|```/g, "").trim();
+    const firstBrace = cleaned.indexOf("{");
+    const lastBrace = cleaned.lastIndexOf("}");
+
+    if (firstBrace === -1 || lastBrace === -1 || lastBrace < firstBrace) {
+      console.error("No JSON object found in Gemini output:", cleaned.slice(0, 500));
+      return null;
+    }
+
+    cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+
     const parsed = JSON.parse(cleaned);
-
     return parsed;
   } catch (err) {
     console.error("callLLMForInsights failed:", err.message);

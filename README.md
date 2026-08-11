@@ -11,7 +11,7 @@ A full-stack survey builder with two USP features that set it apart from a basic
 - **Backend:** Node.js, Express.js, Mongoose (MongoDB)
 - **Auth:** JWT, bcrypt
 - **Database:** MongoDB (local or MongoDB Atlas)
-- **AI Insights:** Anthropic API (Claude)
+- **AI Insights:** Google Gemini API 
 
 ## Project Structure
 
@@ -108,7 +108,7 @@ Verify with `http://localhost:5000/api/health` → `{ "status": "ok" }`.
 1. Create a new Web Service pointing at the `server/` directory
 2. Build command: `npm install`
 3. Start command: `npm start`
-4. Set environment variables: `MONGO_URI`, `JWT_SECRET`, `PORT`, `ANTHROPIC_API_KEY`
+4. Set environment variables: `MONGO_URI`, `JWT_SECRET`, `PORT`, `GEMINI_API_KEY`
 
 **Database (MongoDB Atlas):**
 1. Create a free cluster
