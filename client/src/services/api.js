@@ -1,10 +1,15 @@
 import axios from "axios";
 import toast from "react-hot-toast";
 
-const api = axios.create({
-  baseURL: "/api"
-});
+// In local dev, requests to "/api" are proxied to localhost:5000 (see
+// vite.config.js). In production, set VITE_API_URL to the deployed
+// backend's URL (e.g. https://survey-builder-kg6e.onrender.com/api)
+// as an environment variable on Vercel.
+const baseURL = import.meta.env.VITE_API_URL || "/api";
 
+const api = axios.create({
+  baseURL
+});
 // Attach JWT token automatically once auth is added (Prompt 2)
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");

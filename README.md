@@ -74,7 +74,7 @@ Required variables in `server/.env`:
 | `MONGO_URI` | Local MongoDB URI or MongoDB Atlas connection string |
 | `JWT_SECRET` | Any long random string, used to sign auth tokens |
 | `PORT` | Backend port (defaults to 5000) |
-| `ANTHROPIC_API_KEY` | Needed only for the AI Insights tab. Without it, that tab shows a clear error but everything else still works. |
+| `GEMINI_API_KEY` | Needed only for the AI Insights tab. Without it, that tab shows a clear error but everything else still works. |
 
 ### 3. Run the app
 
