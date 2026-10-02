@@ -101,8 +101,9 @@ Verify with `http://localhost:5000/api/health` → `{ "status": "ok" }`.
 **Frontend (Vercel):**
 1. Push this repo to GitHub
 2. Import the `client/` directory as a Vercel project (Framework preset: Vite)
-3. Set the build output directory to `dist`
-4. No environment variables needed on the frontend — API calls are proxied via `/api` during local dev; in production, either deploy the backend under the same domain or set `VITE_API_URL` and update `services/api.js`'s `baseURL` accordingly
+3. Set the build command to `npm run build` and the output directory to `dist`
+4. In the Vercel project settings, add `VITE_API_URL` with the Render backend URL ending in `/api` (for example, `https://your-service.onrender.com/api`), then redeploy. This is required because the `/api` proxy in `vite.config.js` is only for local development.
+5. `client/vercel.json` rewrites frontend routes to `index.html`, so a shared survey URL such as `/survey/<slug>` works when opened directly or refreshed.
 
 **Backend (Render or Railway):**
 1. Create a new Web Service pointing at the `server/` directory
