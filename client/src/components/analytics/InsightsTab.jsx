@@ -59,7 +59,7 @@ function InsightCard({ survey, question, cachedInsight, onRefreshed }) {
               {(insight.themes || []).map((theme, i) => (
                 <span
                   key={i}
-                  className="text-xs px-2 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400"
+                  className="text-xs px-2 py-1 rounded-full bg-[#eaf1f7] dark:bg-blue-900/30 text-[#003366] dark:text-blue-400"
                 >
                   {theme}
                 </span>

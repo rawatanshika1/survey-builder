@@ -21,8 +21,26 @@ const responseSchema = new mongoose.Schema(
       ref: "Survey",
       required: true
     },
+    distributionRecipient: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SurveyRecipient",
+      default: null,
+      index: true
+    },
     answers: {
       type: [answerSchema],
+      default: []
+    },
+    skippedQuestionIds: {
+      type: [String],
+      default: []
+    },
+    notReachedQuestionIds: {
+      type: [String],
+      default: []
+    },
+    reachedQuestionIds: {
+      type: [String],
       default: []
     },
     startedAt: {

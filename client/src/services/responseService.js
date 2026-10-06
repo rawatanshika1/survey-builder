@@ -4,8 +4,11 @@ export function getPublicSurvey(slug) {
   return api.get(`/surveys/public/${slug}`).then((res) => res.data.survey);
 }
 
-export function startResponse(surveyId) {
-  return api.post("/responses/start", { surveyId }).then((res) => res.data.responseId);
+export function startResponse(surveyId, distributionToken) {
+  return api.post("/responses/start", {
+    surveyId,
+    ...(distributionToken ? { distributionToken } : {})
+  }).then((res) => res.data.responseId);
 }
 
 export function updateProgress(responseId, questionIndex) {

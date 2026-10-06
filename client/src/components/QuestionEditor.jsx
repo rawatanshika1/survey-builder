@@ -5,14 +5,26 @@ const QUESTION_TYPES = [
   { value: "checkboxes", label: "Checkboxes" },
   { value: "dropdown", label: "Dropdown" },
   { value: "rating", label: "Rating (1-5)" },
+  { value: "number", label: "Number" },
+  { value: "nps", label: "NPS (0-10)" },
   { value: "yes-no", label: "Yes / No" }
 ];
 
 const CHOICE_TYPES = ["multiple-choice", "checkboxes", "dropdown"];
 
-export default function QuestionEditor({ question, index, total, onChange, onDelete, onMove }) {
+export default function QuestionEditor({ question, index, total, onChange, onDelete, onMove, onLogic, onDuplicate, readOnly = false }) {
   function update(field, value) {
     onChange({ ...question, [field]: value });
+  }
+
+  function updateType(type) {
+    onChange({
+      ...question,
+      type,
+      questionText: type === "nps" && !question.questionText.trim()
+        ? "How likely are you to recommend our product to a friend or colleague?"
+        : question.questionText
+    });
   }
 
   function updateOption(i, value) {
@@ -37,17 +49,20 @@ export default function QuestionEditor({ question, index, total, onChange, onDel
       <div className="flex items-start justify-between gap-3">
         <input
           type="text"
+          aria-label={`Question ${index + 1} text`}
           value={question.questionText}
           onChange={(e) => update("questionText", e.target.value)}
+          readOnly={readOnly}
           placeholder={`Question ${index + 1}`}
-          className="flex-1 font-medium bg-transparent border-b border-gray-200 dark:border-gray-700 focus:outline-none focus:border-blue-500 py-1"
+          className="flex-1 font-medium bg-transparent border-b border-gray-200 dark:border-gray-700 focus:outline-none focus:border-[#003366] py-1"
         />
 
-        <div className="flex items-center gap-1">
+        {!readOnly && <div className="flex items-center gap-1 question-editor-actions">
           <button
             type="button"
             onClick={() => onMove(index, -1)}
             disabled={index === 0}
+            aria-label={`Move question ${index + 1} up`}
             className="text-xs px-2 py-1 rounded disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-700"
             title="Move up"
           >
@@ -57,6 +72,7 @@ export default function QuestionEditor({ question, index, total, onChange, onDel
             type="button"
             onClick={() => onMove(index, 1)}
             disabled={index === total - 1}
+            aria-label={`Move question ${index + 1} down`}
             className="text-xs px-2 py-1 rounded disabled:opacity-30 hover:bg-gray-100 dark:hover:bg-gray-700"
             title="Move down"
           >
@@ -64,18 +80,47 @@ export default function QuestionEditor({ question, index, total, onChange, onDel
           </button>
           <button
             type="button"
+            onClick={onDuplicate}
+            aria-label={`Duplicate question ${index + 1}`}
+            className="text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700"
+          >
+            Duplicate
+          </button>
+          <button
+            type="button"
+            onClick={onLogic}
+            aria-label={`Edit logic for question ${index + 1}`}
+            className="text-xs px-2 py-1 rounded hover:bg-[#eaf1f7] dark:hover:bg-blue-900/20 text-[#003366] dark:text-blue-400"
+          >
+            Logic
+          </button>
+          <button
+            type="button"
             onClick={onDelete}
+            aria-label={`Delete question ${index + 1}`}
             className="text-xs px-2 py-1 rounded text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
           >
             Delete
           </button>
-        </div>
+        </div>}
       </div>
+
+      <textarea
+        aria-label={`Description for question ${index + 1}`}
+        value={question.description || ""}
+        onChange={(event) => update("description", event.target.value)}
+        readOnly={readOnly}
+        placeholder="Description (optional)"
+        rows={2}
+        className="w-full text-sm rounded-md border border-gray-200 dark:border-gray-700 dark:bg-gray-800 px-3 py-2"
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <select
+          aria-label={`Type for question ${index + 1}`}
           value={question.type}
-          onChange={(e) => update("type", e.target.value)}
+          onChange={(e) => updateType(e.target.value)}
+          disabled={readOnly}
           className="text-sm rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-2 py-1"
         >
           {QUESTION_TYPES.map((t) => (
@@ -90,6 +135,7 @@ export default function QuestionEditor({ question, index, total, onChange, onDel
             type="checkbox"
             checked={question.required}
             onChange={(e) => update("required", e.target.checked)}
+            disabled={readOnly}
           />
           Required
         </label>
@@ -101,27 +147,30 @@ export default function QuestionEditor({ question, index, total, onChange, onDel
             <div key={i} className="flex items-center gap-2">
               <input
                 type="text"
+                aria-label={`Option ${i + 1} for question ${index + 1}`}
                 value={opt}
                 onChange={(e) => updateOption(i, e.target.value)}
+                readOnly={readOnly}
                 placeholder={`Option ${i + 1}`}
                 className="flex-1 text-sm rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-2 py-1"
               />
-              <button
+              {!readOnly && <button
                 type="button"
                 onClick={() => removeOption(i)}
+                aria-label={`Remove option ${i + 1} from question ${index + 1}`}
                 className="text-xs text-red-600 px-1"
               >
                 ✕
-              </button>
+              </button>}
             </div>
           ))}
-          <button
+          {!readOnly && <button
             type="button"
             onClick={addOption}
-            className="text-xs font-medium text-blue-600 dark:text-blue-400"
+            className="text-xs font-medium text-[#003366] dark:text-blue-400"
           >
             + Add option
-          </button>
+          </button>}
         </div>
       )}
     </div>

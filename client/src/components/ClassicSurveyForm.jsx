@@ -1,9 +1,13 @@
 import { useState } from "react";
 import AnswerInput from "./AnswerInput.jsx";
+import { evaluateSurveyPath, getQuestionId, hasAnswer } from "../utils/surveyLogic.js";
 
 export default function ClassicSurveyForm({ survey, onSubmit, submitting }) {
   const [answers, setAnswers] = useState({});
   const [error, setError] = useState("");
+  const path = evaluateSurveyPath(survey, answers);
+  const questionsById = new Map(survey.questions.map((question) => [getQuestionId(question), question]));
+  const activeQuestions = path.reachedQuestionIds.map((id) => questionsById.get(id)).filter(Boolean);
 
   function setAnswer(questionId, value) {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -13,27 +17,20 @@ export default function ClassicSurveyForm({ survey, onSubmit, submitting }) {
     e.preventDefault();
     setError("");
 
-    for (const q of survey.questions) {
-      const qid = q._id || q.id;
-      if (q.required) {
-        const val = answers[qid];
-        const isEmpty =
-          val === undefined ||
-          val === "" ||
-          (Array.isArray(val) && val.length === 0);
-        if (isEmpty) {
-          setError(`"${q.questionText}" is required`);
-          return;
-        }
+    for (const q of activeQuestions) {
+      const qid = getQuestionId(q);
+      if (q.required && !hasAnswer(answers[qid])) {
+        setError(`"${q.questionText}" is required`);
+        return;
       }
     }
 
-    const formatted = survey.questions.map((q) => ({
-      questionId: q._id || q.id,
-      value: answers[q._id || q.id] ?? null
+    const formatted = activeQuestions.map((q) => ({
+      questionId: getQuestionId(q),
+      value: answers[getQuestionId(q)] ?? null
     }));
 
-    onSubmit(formatted);
+    onSubmit(formatted, path);
   }
 
   return (
@@ -51,14 +48,15 @@ export default function ClassicSurveyForm({ survey, onSubmit, submitting }) {
         </div>
       )}
 
-      {survey.questions.map((q) => {
-        const qid = q._id || q.id;
+      {activeQuestions.map((q) => {
+        const qid = getQuestionId(q);
         return (
           <div key={qid} className="space-y-2">
             <label className="block text-sm font-medium">
               {q.questionText}
               {q.required && <span className="text-red-500 ml-1">*</span>}
             </label>
+            {q.description && <p className="text-sm text-gray-500 dark:text-gray-400">{q.description}</p>}
             <AnswerInput
               question={q}
               value={answers[qid]}
@@ -71,7 +69,7 @@ export default function ClassicSurveyForm({ survey, onSubmit, submitting }) {
       <button
         type="submit"
         disabled={submitting}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-md py-3 text-sm"
+        className="w-full bg-[#003366] hover:bg-[#1e3a5f] disabled:opacity-60 text-white font-medium rounded-md py-3 text-sm transition-colors"
       >
         {submitting ? "Submitting..." : "Submit"}
       </button>

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 function getInitialDarkMode() {
   const stored = localStorage.getItem("darkMode");
   if (stored !== null) return stored === "true";
-  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  return false;
 }
 
 export default function DarkModeToggle() {
@@ -17,10 +17,11 @@ export default function DarkModeToggle() {
   return (
     <button
       onClick={() => setDark((d) => !d)}
-      aria-label="Toggle dark mode"
-      className="text-sm px-2.5 py-1.5 rounded-md bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700"
+      aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+      title={dark ? "Switch to light mode" : "Switch to dark mode"}
+      className="dark-mode-toggle"
     >
-      {dark ? "☀️" : "🌙"}
+      {dark ? "☀" : "☾"}
     </button>
   );
 }

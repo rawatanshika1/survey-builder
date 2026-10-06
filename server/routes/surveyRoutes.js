@@ -15,8 +15,27 @@ const {
   exportResponses,
   getResponses
 } = require("../controllers/analyticsController");
+const {
+  getSurveyPermissions,
+  setSurveyPermission,
+  removeSurveyPermission
+} = require("../controllers/workspaceController");
+const {
+  getDistribution,
+  addRecipients,
+  sendDistribution,
+  sendOne
+} = require("../controllers/distributionController");
 
 router.use(authMiddleware);
+
+router.get("/:id/permissions", getSurveyPermissions);
+router.put("/:id/permissions/:userId", setSurveyPermission);
+router.delete("/:id/permissions/:userId", removeSurveyPermission);
+router.get("/:id/distribution", getDistribution);
+router.post("/:id/distribution/recipients", addRecipients);
+router.post("/:id/distribution/send", sendDistribution);
+router.post("/:id/distribution/recipients/:recipientId/send", sendOne);
 
 router.post("/", createSurvey);
 router.get("/", getMySurveys);

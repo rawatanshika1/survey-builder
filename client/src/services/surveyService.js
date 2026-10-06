@@ -5,7 +5,13 @@ export function getSurveys(params = {}) {
 }
 
 export function getSurveyById(id) {
-  return api.get(`/surveys/${id}`).then((res) => res.data.survey);
+  return api.get(`/surveys/${id}`).then((res) => ({
+    ...res.data.survey,
+    accessRole: res.data.role,
+    canEdit: res.data.canEdit,
+    canDelete: res.data.canDelete,
+    canManageAccess: res.data.canManageAccess
+  }));
 }
 
 export function createSurvey(payload) {
@@ -13,7 +19,13 @@ export function createSurvey(payload) {
 }
 
 export function updateSurvey(id, payload) {
-  return api.put(`/surveys/${id}`, payload).then((res) => res.data.survey);
+  return api.put(`/surveys/${id}`, payload).then((res) => ({
+    ...res.data.survey,
+    accessRole: res.data.role,
+    canEdit: res.data.canEdit,
+    canDelete: res.data.canDelete,
+    canManageAccess: res.data.canManageAccess
+  }));
 }
 
 export function deleteSurvey(id) {
@@ -21,5 +33,11 @@ export function deleteSurvey(id) {
 }
 
 export function publishSurvey(id) {
-  return api.patch(`/surveys/${id}/publish`).then((res) => res.data.survey);
+  return api.patch(`/surveys/${id}/publish`).then((res) => ({
+    ...res.data.survey,
+    accessRole: res.data.role,
+    canEdit: res.data.canEdit,
+    canDelete: res.data.canDelete,
+    canManageAccess: res.data.canManageAccess
+  }));
 }

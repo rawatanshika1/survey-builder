@@ -5,6 +5,7 @@ import toast from "react-hot-toast";
 import { getPublicSurvey, startResponse, submitResponse } from "../services/responseService.js";
 import ClassicSurveyForm from "../components/ClassicSurveyForm.jsx";
 import ConversationalSurveyForm from "../components/ConversationalSurveyForm.jsx";
+import { Button } from "../components/ui.jsx";
 
 export default function PublicSurvey() {
   const { slug } = useParams();
@@ -13,6 +14,8 @@ export default function PublicSurvey() {
   const [responseId, setResponseId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [startError, setStartError] = useState("");
+  const [startingResponse, setStartingResponse] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -24,11 +27,15 @@ export default function PublicSurvey() {
         if (!mounted) return;
         setSurvey(data);
         try {
-          const id = await startResponse(data._id);
-          if (mounted) setResponseId(id);
-        } catch {
-          // Non-fatal - respondent can still fill out the survey even if
-          // the start-tracking call fails
+          const id = await startSurveyResponse(data);
+          if (mounted) {
+            setResponseId(id);
+            setStartError("");
+          }
+        } catch (startRequestError) {
+          if (mounted) {
+            setStartError(startRequestError.response?.data?.message || "We couldn't start response tracking. Please try again.");
+          }
         }
       })
       .catch((err) => {
@@ -48,16 +55,37 @@ export default function PublicSurvey() {
     };
   }, [slug]);
 
+  async function startSurveyResponse(currentSurvey = survey) {
+    if (!currentSurvey) throw new Error("Survey is not loaded");
+    setStartingResponse(true);
+    setStartError("");
+    try {
+      const distributionToken = new URLSearchParams(window.location.search).get("distribution");
+      return await startResponse(currentSurvey._id, distributionToken || undefined);
+    } finally {
+      setStartingResponse(false);
+    }
+  }
+
+  async function retryStartResponse() {
+    try {
+      const id = await startSurveyResponse();
+      setResponseId(id);
+      setStartError("");
+    } catch (startRequestError) {
+      setStartError(startRequestError.response?.data?.message || "We couldn't start response tracking. Please try again.");
+    }
+  }
+
   async function handleSubmit(answers) {
     setSubmitting(true);
     try {
-      if (responseId) {
-        await submitResponse(responseId, answers);
-      }
+      if (!responseId) throw new Error("Your response could not be started. Please retry before submitting.");
+      await submitResponse(responseId, answers);
       setSubmitted(true);
     } catch (err) {
-      console.error("Failed to submit response", err);
-      toast.error("Something went wrong submitting your response. Please try again.");
+      const message = err.response?.data?.message || err.message || "Something went wrong submitting your response. Please try again.";
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -75,6 +103,18 @@ export default function PublicSurvey() {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
         <p className="text-gray-500 dark:text-gray-400 text-center">{error}</p>
+      </div>
+    );
+  }
+
+  if (startError || !responseId) {
+    return (
+      <div className="public-survey-tracking-error" role="alert">
+        <h1>We couldn't start your response</h1>
+        <p>{startError || "Response tracking is unavailable. Your answers have not been submitted."}</p>
+        <Button variant="primary" onClick={retryStartResponse} disabled={startingResponse}>
+          {startingResponse ? "Retrying..." : "Try again"}
+        </Button>
       </div>
     );
   }

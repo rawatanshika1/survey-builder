@@ -1,21 +1,17 @@
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { getResponses, downloadExport } from "../../services/analyticsService.js";
+import { downloadExport } from "../../services/analyticsService.js";
+import { EmptyState, Table } from "../ui.jsx";
 
 const PAGE_SIZE = 10;
 
-export default function RawResponsesTab({ survey, analytics }) {
-  const [responses, setResponses] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function RawResponsesTab({ survey, analytics, responses = [] }) {
   const [page, setPage] = useState(1);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
-    getResponses(survey._id)
-      .then(setResponses)
-      .catch((err) => console.error("Failed to load responses", err))
-      .finally(() => setLoading(false));
-  }, [survey._id]);
+    setPage(1);
+  }, [survey._id, responses.length]);
 
   async function handleExport() {
     setExporting(true);
@@ -41,20 +37,17 @@ export default function RawResponsesTab({ survey, analytics }) {
         <button
           onClick={handleExport}
           disabled={exporting || responses.length === 0}
-          className="text-sm font-medium px-4 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+          className="text-sm font-medium px-4 py-2 rounded-md bg-[#003366] text-white hover:bg-[#1e3a5f] disabled:opacity-60 transition-colors"
         >
           {exporting ? "Exporting..." : "Export as CSV"}
         </button>
       </div>
 
-      {loading ? (
-        <p className="text-gray-500 dark:text-gray-400">Loading responses...</p>
-      ) : responses.length === 0 ? (
-        <p className="text-gray-500 dark:text-gray-400 text-center py-10">No responses yet.</p>
+      {responses.length === 0 ? (
+        <EmptyState icon="inbox" title="No responses yet" description="Responses will appear here once someone completes your survey." />
       ) : (
         <>
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-x-auto">
-            <table className="w-full text-sm min-w-[600px]">
+          <Table>
               <thead className="bg-gray-50 dark:bg-gray-900 text-left">
                 <tr>
                   <th className="px-4 py-2">Status</th>
@@ -85,14 +78,17 @@ export default function RawResponsesTab({ survey, analytics }) {
                     </td>
                     {r.answers.map((a, i) => (
                       <td key={i} className="px-4 py-2">
-                        {Array.isArray(a.value) ? a.value.join(", ") : a.value ?? "—"}
+                        {a.status === "skipped"
+                          ? "Skipped (logic)"
+                          : a.status === "not-reached"
+                            ? "Not reached"
+                            : Array.isArray(a.value) ? a.value.join(", ") : a.value ?? "—"}
                       </td>
                     ))}
                   </tr>
                 ))}
               </tbody>
-            </table>
-          </div>
+          </Table>
 
           <div className="flex items-center justify-between text-sm">
             <span className="text-gray-500">

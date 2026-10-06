@@ -40,11 +40,11 @@ survey-builder/
 ## Features
 
 - Register / login (JWT + bcrypt), protected routes
-- Survey builder: title, description, category, expiration date, 7 question types (short answer, long answer, multiple choice, checkboxes, dropdown, rating, yes/no), drag-free reordering (up/down), Classic vs Conversational mode toggle
+- Survey builder: title, description, category, expiration date, 9 question types (short answer, long answer, multiple choice, checkboxes, dropdown, rating, number, yes/no, NPS), conditional branching, drag-free reordering (up/down), Classic vs Conversational mode toggle
 - Publish surveys to a shareable public link
 - Public survey-taking experience in Classic (all questions at once) or Conversational (Typeform-style, one at a time with animated transitions) mode — no login required for respondents
 - Analytics dashboard per survey:
-  - **Overview** — response totals, completion rate, average rating, per-question charts
+  - **Overview** — response totals, completion rate, average rating, per-question charts, and per-question NPS score and promoter/passive/detractor breakdowns
   - **Drop-off Funnel** — shows exactly which question causes the most abandonment
   - **AI Insights** — auto-generated themes, sentiment breakdown, and example quotes for open-text answers
   - **Raw Responses** — paginated table + CSV export
@@ -75,6 +75,50 @@ Required variables in `server/.env`:
 | `JWT_SECRET` | Any long random string, used to sign auth tokens |
 | `PORT` | Backend port (defaults to 5000) |
 | `GEMINI_API_KEY` | Needed only for the AI Insights tab. Without it, that tab shows a clear error but everything else still works. |
+| `SMTP_HOST` | Optional SMTP hostname for survey email distribution. |
+| `SMTP_PORT` | SMTP port (typically `587` with STARTTLS or `465` with implicit TLS). |
+| `SMTP_SECURE` | Set to `true` for implicit TLS (typically port 465); otherwise use STARTTLS when supported. |
+| `SMTP_USER` / `SMTP_PASS` | SMTP authentication credentials. Never commit these values. |
+| `EMAIL_FROM` | Verified sender address/name, for example `Surveys <surveys@example.com>`. |
+| `APP_BASE_URL` | Public frontend origin used to construct survey links, for example `https://surveys.example.com`. |
+| `EMAIL_PUBLIC_API_URL` | Optional public backend API origin for tracking endpoints. Defaults to `${APP_BASE_URL}/api`. |
+| `DISTRIBUTION_TOKEN_SECRET` | Optional separate secret for deterministic per-recipient tracking tokens; defaults to `JWT_SECRET`. |
+
+Email delivery is synchronous because the app does not currently have a background-job queue. “Sent” means accepted by the configured SMTP server; delivery status is not available without a provider webhook. Open tracking uses a pixel and is approximate due to email-client blocking and prefetching. Clicks and completed responses are recorded by the server. The ordinary `/survey/:slug` public share link remains available.
+
+## Developer API
+
+Workspace owners and editors can manage keys from **Developer / API** in the app. A key is generated once, shown only at creation, and stored as a SHA-256 hash. Keys are tied to the creator and a workspace; workspace membership is revalidated for every request. Only read scopes are currently available:
+
+- `READ_SURVEYS` — list surveys and view survey/question details.
+- `READ_RESPONSES` — list completed responses for a survey.
+
+Keep API keys in a trusted server-side secret store. Do not commit keys or ship them in browser/mobile clients. Revoke compromised or unused keys in the developer dashboard.
+
+### Key management (existing JWT authentication)
+
+| Method | Endpoint | Access |
+|---|---|---|
+| `GET` | `/api/developer/workspaces/:workspaceId/keys` | Workspace members; lists metadata only, never the full key |
+| `POST` | `/api/developer/workspaces/:workspaceId/keys` | Owner/editor; JSON body: `{"name":"Warehouse sync","scopes":["READ_SURVEYS"]}`; returns the complete key once |
+| `DELETE` | `/api/developer/workspaces/:workspaceId/keys/:keyId` | Owner; editor may revoke keys they created |
+| `GET` | `/api/developer/workspaces/:workspaceId/usage` | Workspace members; aggregate request counts and last-used time |
+
+Management endpoints use the app's existing JWT bearer authentication. Key creation accepts one or both supported scopes; no create, edit, delete, distribution, or workspace-management operation is available through the public API.
+
+### Version 1 endpoints (API key authentication)
+
+Set `Authorization: Bearer YOUR_API_KEY` and `Accept: application/json` on every `/api/v1` request.
+
+| Method | Endpoint | Required scope | Parameters |
+|---|---|---|---|
+| `GET` | `/api/v1/surveys` | `READ_SURVEYS` | `page` (1-1000, default 1), `limit` (1-100, default 50) |
+| `GET` | `/api/v1/surveys/:surveyId` | `READ_SURVEYS` | `surveyId` MongoDB ObjectId |
+| `GET` | `/api/v1/surveys/:surveyId/responses` | `READ_RESPONSES` | `surveyId`; optional `page` and `limit` as above |
+
+Successful responses use `{"success":true,"data":...,"error":null}`. Errors use `{"success":false,"data":null,"error":{"code":"...","message":"..."}}` and HTTP 400 (invalid input), 401 (invalid/revoked key), 403 (scope or membership), 404 (not in the key's workspace), 429 (rate limit), or 500. Responses contain only completed surveys' response data and omit respondent identity/recipient records.
+
+Each API key is limited to 120 requests per minute. Usage counters track authenticated requests within the rate limit, including insufficient-scope requests. The limiter is in-memory per server process, so multi-instance deployments should place a shared API gateway/distributed limiter in front of the service.
 
 ### 3. Run the app
 
@@ -91,8 +135,11 @@ Verify with `http://localhost:5000/api/health` → `{ "status": "ok" }`.
 
 - [x] Project scaffolding
 - [x] Authentication (register/login/JWT)
-- [x] Survey builder (CRUD + 7 question types)
+- [x] Survey builder (CRUD + 9 question types, including NPS and conditional branching)
 - [x] Public survey-taking experience (Classic + Conversational modes)
+- [x] Workspace collaboration and role-based access control
+- [x] Survey email distribution with private recipients and response attribution
+- [x] Workspace-scoped developer API keys and versioned read-only API
 - [x] Analytics dashboard + Drop-off & AI Insights
 - [x] Polish: search/filter, dark mode, toasts, skeleton loaders, deployment prep
 

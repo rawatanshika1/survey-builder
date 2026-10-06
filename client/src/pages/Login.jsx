@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext.jsx";
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +24,8 @@ export default function Login() {
     try {
       setSubmitting(true);
       await login(email, password);
-      navigate("/dashboard");
+      const returnTo = searchParams.get("returnTo");
+      navigate(returnTo && /^\/invite\/[a-f0-9]{64}$/.test(returnTo) ? returnTo : "/dashboard");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please try again.");
     } finally {
@@ -34,7 +36,7 @@ export default function Login() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-md p-8">
-        <h1 className="text-2xl font-bold mb-6 text-center">Welcome back</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center text-[#003366] dark:text-gray-100">Welcome back</h1>
 
         {error && (
           <div className="mb-4 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md px-3 py-2">
@@ -44,23 +46,29 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">Email</label>
+            <label htmlFor="login-email" className="block text-sm font-medium mb-1">Email</label>
             <input
+              id="login-email"
               type="email"
+              autoComplete="email"
+              required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003366]"
               placeholder="you@example.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Password</label>
+            <label htmlFor="login-password" className="block text-sm font-medium mb-1">Password</label>
             <input
+              id="login-password"
               type="password"
+              autoComplete="current-password"
+              required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 dark:bg-gray-700 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#003366]"
               placeholder="••••••••"
             />
           </div>
@@ -68,7 +76,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium rounded-md py-2 text-sm"
+            className="w-full bg-[#003366] hover:bg-[#1e3a5f] disabled:opacity-60 text-white font-medium rounded-md py-2 text-sm transition-colors"
           >
             {submitting ? "Logging in..." : "Log In"}
           </button>
@@ -76,7 +84,7 @@ export default function Login() {
 
         <p className="text-sm text-center mt-6 text-gray-500 dark:text-gray-400">
           Don't have an account?{" "}
-          <Link to="/register" className="text-blue-600 dark:text-blue-400 font-medium">
+          <Link to="/register" className="text-[#003366] dark:text-blue-400 font-medium">
             Register
           </Link>
         </p>

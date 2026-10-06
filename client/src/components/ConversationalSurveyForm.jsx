@@ -2,18 +2,22 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import AnswerInput from "./AnswerInput.jsx";
 import { updateProgress } from "../services/responseService.js";
+import { evaluateSurveyPath, getQuestionId, hasAnswer } from "../utils/surveyLogic.js";
 
 export default function ConversationalSurveyForm({ survey, responseId, onSubmit, submitting }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const initialQuestionId = getQuestionId([...survey.questions].sort((a, b) => a.order - b.order)[0]);
+  const [history, setHistory] = useState([initialQuestionId]);
   const [answers, setAnswers] = useState({});
   const [direction, setDirection] = useState(1);
   const [error, setError] = useState("");
 
-  const questions = survey.questions;
-  const total = questions.length;
-  const question = questions[currentIndex];
-  const qid = question._id || question.id;
-  const progressPct = Math.round(((currentIndex + 1) / total) * 100);
+  const questions = [...survey.questions].sort((a, b) => a.order - b.order);
+  const path = evaluateSurveyPath(survey, answers);
+  const currentQuestionId = history[history.length - 1];
+  const question = questions.find((candidate) => getQuestionId(candidate) === currentQuestionId);
+  const qid = getQuestionId(question);
+  const currentIndex = path.reachedQuestionIds.indexOf(qid);
+  const progressPct = Math.round((path.reachedQuestionIds.length / questions.length) * 100);
 
   function setAnswer(value) {
     setAnswers((prev) => ({ ...prev, [qid]: value }));
@@ -21,10 +25,7 @@ export default function ConversationalSurveyForm({ survey, responseId, onSubmit,
 
   function isCurrentAnswerValid() {
     if (!question.required) return true;
-    const val = answers[qid];
-    if (val === undefined || val === "") return false;
-    if (Array.isArray(val) && val.length === 0) return false;
-    return true;
+    return hasAnswer(answers[qid]);
   }
 
   async function goNext() {
@@ -34,30 +35,36 @@ export default function ConversationalSurveyForm({ survey, responseId, onSubmit,
     }
     setError("");
 
-    const nextIndex = currentIndex + 1;
+    const nextAnswers = { ...answers };
+    const nextPath = evaluateSurveyPath(survey, nextAnswers);
+    const pathIndex = nextPath.reachedQuestionIds.indexOf(qid);
+    const nextQuestionId = nextPath.reachedQuestionIds[pathIndex + 1];
 
     if (responseId) {
-      updateProgress(responseId, nextIndex).catch(() => {});
+      const progressIndex = nextQuestionId
+        ? questions.findIndex((candidate) => getQuestionId(candidate) === nextQuestionId)
+        : questions.findIndex((candidate) => getQuestionId(candidate) === qid) + 1;
+      updateProgress(responseId, progressIndex).catch(() => {});
     }
 
-    if (nextIndex >= total) {
-      const formatted = questions.map((q) => ({
-        questionId: q._id || q.id,
-        value: answers[q._id || q.id] ?? null
+    if (!nextQuestionId) {
+      const formatted = nextPath.reachedQuestionIds.map((questionId) => ({
+        questionId,
+        value: nextAnswers[questionId] ?? null
       }));
-      onSubmit(formatted);
+      onSubmit(formatted, nextPath);
       return;
     }
 
     setDirection(1);
-    setCurrentIndex(nextIndex);
+    setHistory((previous) => [...previous, nextQuestionId]);
   }
 
   function goBack() {
-    if (currentIndex === 0) return;
+    if (history.length <= 1) return;
     setError("");
     setDirection(-1);
-    setCurrentIndex(currentIndex - 1);
+    setHistory((previous) => previous.slice(0, -1));
   }
 
   const variants = {
@@ -69,9 +76,9 @@ export default function ConversationalSurveyForm({ survey, responseId, onSubmit,
   return (
     <div className="min-h-screen flex flex-col">
       {/* Progress bar */}
-      <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700">
+      <div className="h-1.5 w-full bg-gray-200 dark:bg-gray-700" role="progressbar" aria-label="Survey progress" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressPct}>
         <motion.div
-          className="h-full bg-blue-600"
+          className="h-full bg-[#0D9488]"
           animate={{ width: `${progressPct}%` }}
           transition={{ duration: 0.3 }}
         />
@@ -90,16 +97,17 @@ export default function ConversationalSurveyForm({ survey, responseId, onSubmit,
               transition={{ duration: 0.25 }}
             >
               <p className="text-xs text-gray-400 mb-2">
-                Question {currentIndex + 1} of {total}
+                Question {currentIndex + 1} of {path.reachedQuestionIds.length}
               </p>
               <h2 className="text-xl font-semibold mb-4">
                 {question.questionText}
                 {question.required && <span className="text-red-500 ml-1">*</span>}
               </h2>
+              {question.description && <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{question.description}</p>}
 
               <AnswerInput question={question} value={answers[qid]} onChange={setAnswer} />
 
-              {error && <p className="text-sm text-red-600 mt-3">{error}</p>}
+              {error && <p className="text-sm text-red-600 mt-3" role="alert">{error}</p>}
 
               <div className="flex items-center gap-3 mt-6">
                 {currentIndex > 0 && (
@@ -115,11 +123,11 @@ export default function ConversationalSurveyForm({ survey, responseId, onSubmit,
                   type="button"
                   onClick={goNext}
                   disabled={submitting}
-                  className="px-5 py-2 text-sm font-medium rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-60"
+                  className="px-5 py-2 text-sm font-medium rounded-md bg-[#0f766e] text-white hover:bg-[#115e59] disabled:opacity-60 transition-colors"
                 >
                   {submitting
                     ? "Submitting..."
-                    : currentIndex === total - 1
+                    : !path.reachedQuestionIds[currentIndex + 1]
                     ? "Submit"
                     : "Next"}
                 </button>

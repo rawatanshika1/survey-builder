@@ -12,8 +12,8 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-      <Link to="/" className="font-bold text-lg">
+    <nav className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white dark:bg-gray-900 dark:border-gray-800">
+      <Link to="/" className="font-bold text-lg text-[#003366] dark:text-gray-100">
         Smart Survey Builder
       </Link>
 
@@ -23,7 +23,7 @@ export default function Navbar() {
           <>
             <Link
               to="/dashboard"
-              className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400"
+              className="text-sm font-medium text-gray-700 hover:text-[#003366] dark:text-gray-200 dark:hover:text-blue-400"
             >
               Dashboard
             </Link>
@@ -41,13 +41,13 @@ export default function Navbar() {
           <>
             <Link
               to="/login"
-              className="text-sm font-medium hover:text-blue-600 dark:hover:text-blue-400"
+              className="text-sm font-medium text-gray-700 hover:text-[#003366] dark:text-gray-200 dark:hover:text-blue-400"
             >
               Login
             </Link>
             <Link
               to="/register"
-              className="text-sm font-medium px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+              className="text-sm font-medium px-3 py-1.5 rounded-md bg-[#003366] text-white hover:bg-[#1e3a5f] transition-colors"
             >
               Register
             </Link>
