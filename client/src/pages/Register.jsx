@@ -42,7 +42,7 @@ export default function Register() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white dark:bg-gray-800 rounded-xl shadow-md p-8">
-        <h1 className="text-2xl font-bold mb-6 text-center text-[#003366] dark:text-gray-100">Create your account</h1>
+        <h1 className="text-2xl font-bold mb-6 text-center text-ink dark:text-gray-100">Join AskFlow</h1>
 
         {error && (
           <div className="mb-4 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400 rounded-md px-3 py-2">

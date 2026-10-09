@@ -31,10 +31,11 @@ function Layout() {
     location.pathname.startsWith("/builder/") ||
     location.pathname.startsWith("/analytics/") ||
     location.pathname.startsWith("/distribution/");
+  const isHomePage = location.pathname === "/";
 
   return (
     <>
-      {!isPublicSurveyPage && !isWorkspacePage && <Navbar />}
+      {!isPublicSurveyPage && !isWorkspacePage && !isHomePage && <Navbar />}
       <Suspense fallback={<div className="route-loading" role="status">Loading page...</div>}>
         <Routes>
           <Route path="/" element={<Home />} />

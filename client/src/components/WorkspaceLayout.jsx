@@ -75,8 +75,13 @@ export default function WorkspaceLayout({ children }) {
       {mobileOpen && <button className="workspace-overlay" aria-label="Close navigation" onClick={closeMobile} />}
       <aside id="workspace-sidebar" className={`workspace-sidebar ${mobileOpen ? "is-open" : ""}`}>
         <Link to="/dashboard" className="brand-mark" onClick={closeMobile}>
-          <span className="brand-mark__icon"><Icon name="sparkles" size={19} /></span>
-          <span>Smart Survey Builder</span>
+          <span className="brand-mark__icon">
+            <svg viewBox="0 0 40 40" width="21" height="21" fill="none" aria-hidden="true">
+              <path d="M4 10.5A5.5 5.5 0 0 1 9.5 5h15a5.5 5.5 0 0 1 5.5 5.5v9a5.5 5.5 0 0 1-5.5 5.5h-9l-7 5v-6.1A5.5 5.5 0 0 1 4 18.5v-8Z" fill="#14b8c4" />
+              <path d="M14 19.5A5.5 5.5 0 0 1 19.5 14h11a5.5 5.5 0 0 1 5.5 5.5v8a5.5 5.5 0 0 1-5.5 5.5h-2l-6 4v-4h-3a5.5 5.5 0 0 1-5.5-5.5v-8Z" fill="#0f2a43" stroke="white" strokeWidth="1.5" />
+            </svg>
+          </span>
+          <span>AskFlow</span>
         </Link>
 
         <Dropdown
